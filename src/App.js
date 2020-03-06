@@ -23,7 +23,7 @@ class App extends React.Component {
 
   onSubmit = async event => {
     event.preventDefault()
-
+    
     try {
       const response = await superagent
         .post('https://afternoon-cove-19306.herokuapp.com/message')
