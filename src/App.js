@@ -1,26 +1,84 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import superagent from 'superagent'
+import { connect } from 'react-redux'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+class App extends React.Component {
+  state = {
+    text: ''
+  }
+
+  stream = new EventSource('https://afternoon-cove-19306.herokuapp.com/message')
+
+  componentDidMount () {
+    this.stream.onmessage = (event) => {
+      // event.data is a JSON string
+      // we need a real JavaScript object to use the data
+      // To convert, use JSON.parse
+      console.log('event.data test:', event.data)
+      const parsed = JSON.parse(event.data)
+      this.props.dispatch(parsed)
+      console.log('parsed test:', parsed)
+    }
+  }
+
+  onSubmit = async event => {
+    event.preventDefault()
+
+    try {
+      const response = await superagent
+        .post('https://afternoon-cove-19306.herokuapp.com/message')
+        .send({ text: this.state.text })
+
+      console.log(response)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  onChange = event => {
+    this.setState({
+      text: event.target.value
+    })
+  }
+
+  reset = () => {
+    this.setState({ text: '' })
+  }
+
+  render () {
+    const messages = this
+      .props
+      .messages
+      .map(message => <p>{message}</p>)
+
+    return <main>
+      <form onSubmit={this.onSubmit}>
+        <input
+          type='text'
+          onChange={this.onChange}
+          value={this.state.text}
+        />
+        <button>Send</button>
+
+        <button onClick={this.reset}>
+          Reset
+        </button>
+      </form>
+
+      {messages}
+    </main>
+  }
 }
 
-export default App;
+function mapStateToProps (state) {
+  return {
+    messages: state.messages
+  }
+}
+
+
+// export default connect(mapStateToProps)(App);
+
+const connector = connect(mapStateToProps)
+const connected = connector(App)
+export default connected
